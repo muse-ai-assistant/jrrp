@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>今日人品 · 每日一签</title>
+<meta name="description" content="按日期种子算今日人品值，当天固定，次日刷新。">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#0b0e1a">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0b0e1a;--card:#141a30;--line:#2a3358;--ink:#e8ecff;--mut:#8b93b8;--gold:#ffd166;--cyan:#4de1ff;--red:#ff5d73;--green:#5dff9d}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;background-image:radial-gradient(ellipse at 50% -10%,#1b2450 0%,transparent 60%)}
+.wrap{max-width:520px;margin:0 auto;padding:20px 16px 60px}
+header{text-align:center;padding:26px 0 10px}
+header h1{font-size:1.8rem;letter-spacing:.3em;text-shadow:0 0 24px rgba(77,225,255,.5)}
+header h1 span{color:var(--gold);text-shadow:0 0 24px rgba(255,209,102,.5)}
+header p{color:var(--mut);font-size:.8rem;margin-top:8px;letter-spacing:.15em}
+.date{color:var(--cyan);font-size:.85rem;letter-spacing:.1em}
+.tube{font-size:5rem;text-align:center;margin:18px 0 6px;filter:drop-shadow(0 0 18px rgba(255,209,102,.35));transition:transform.15s}
+.tube.shake{animation:shk.12s infinite}
+@keyframes shk{0%{transform:rotate(-8deg) translateY(-4px)}50%{transform:rotate(8deg) translateY(2px)}100%{transform:rotate(-8deg) translateY(-4px)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;margin-top:14px;box-shadow:0 0 40px rgba(77,225,255,.06)}
+.score{text-align:center}
+.score.num{font-size:4.2rem;font-weight:800;line-height:1;background:linear-gradient(180deg,var(--gold),#ff9d3c);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 16px rgba(255,209,102,.4))}
+.score.lv{font-size:1.05rem;letter-spacing:.4em;margin-top:6px;color:var(--gold)}
+.score.lv.bad{color:var(--red);text-shadow:0 0 18px rgba(255,93,115,.5)}
+.score.lv.good{color:var(--green);text-shadow:0 0 18px rgba(93,255,157,.5)}
+.comment{text-align:center;color:var(--ink);font-size:1rem;margin:16px 0 4px;line-height:1.8;min-height:3.2em}
+.yj{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.yj.col{border-radius:12px;padding:12px}
+.yi{background:rgba(93,255,157,.06);border:1px solid rgba(93,255,157,.25)}
+.ji{background:rgba(255,93,115,.06);border:1px solid rgba(255,93,115,.25)}
+.yj h3{font-size:.85rem;letter-spacing:.5em;margin-bottom:8px;text-align:center}
+.yi h3{color:var(--green)}.ji h3{color:var(--red)}
+.yj li{list-style:none;font-size:.88rem;padding:5px 0;color:var(--ink)}
+.yi li::before{content:"✓ ";color:var(--green)}
+.ji li::before{content:"✕ ";color:var(--red)}
+.btnrow{display:flex;gap:10px;margin-top:18px}
+.btn{flex:1;border:none;border-radius:12px;padding:14px;font-size:1rem;cursor:pointer;letter-spacing:.1em;font-weight:600}
+.btn-p{background:linear-gradient(135deg,#4de1ff,#2f7bff);color:#04121f;box-shadow:0 0 24px rgba(77,225,255,.35)}
+.btn-g{background:#1e2748;color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.5}
+.cd{text-align:center;color:var(--mut);font-size:.8rem;margin-top:14px;letter-spacing:.1em}
+.cd b{color:var(--cyan);font-family:monospace;font-size:.95rem}
+.hidden{display:none}
+.reveal{animation:rv.6s ease}
+@keyframes rv{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
+.note{font-size:.72rem;color:var(--mut);text-align:center;margin-top:14px;line-height:1.8}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>今日<span>人品</span></h1>
+<p>赛 博 签 筒 · 每 日 一 抽</p>
+<p class="date" id="date"></p>
+</header>
+
+<div class="tube" id="tube">🎋</div>
+
+<div class="card hidden" id="result">
+<div class="score">
+<div class="num" id="score">--</div>
+<div class="lv" id="lv"></div>
+</div>
+<p class="comment" id="cmt"></p>
+<div class="yj">
+<div class="col yi"><h3>宜</h3><ul id="yi"></ul></div>
+<div class="col ji"><h3>忌</h3><ul id="ji"></ul></div>
+</div>
+<div class="btnrow">
+<button class="btn btn-g" id="copy">复制分享</button>
+<button class="btn btn-p" id="again" disabled>明日再来</button>
+</div>
+</div>
+
+<div class="card" id="ready">
+<p style="text-align:center;color:var(--mut);font-size:.9rem;line-height:2">心诚则灵，默念三遍所求之事<br>然后摇动签筒</p>
+<div class="btnrow"><button class="btn btn-p" id="draw">🎲 摇一摇</button></div>
+</div>
+
+<p class="cd">距离人品刷新还有 <b id="cd">--:--:--</b></p>
+<p class="note">同一天结果固定不变，纯属娱乐，开心就好。<br>所有运算在本地完成，不上传。</p>
+</div>
+
+<script>
+// ---- 种子随机 ----
+function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function pickN(rng,pool,n){const p=[...pool],out=[];while(out.length<n&&p.length){out.push(p.splice(Math.floor(rng()*p.length),1)[0])}return out}
+
+const CMT={
+凶:["今日霉运缠身，宜躺平，忌折腾。","签筒表示：它也救不了你。","建议把重要决定推到明天。","今日宜低调，霉运也是运，挺住。"],
+低:["运势平平，无功无过的一天。","小步慢走，别贪心。","稳住，苟住，就是胜利。","平平淡淡才是真。"],
+中:["中规中矩，适合按部就班。","不大不小，刚刚好。","按计划推进，别整活。","平稳的一天，适合攒人品。"],
+高:["运气在线，可以小小地浪一下。","宜主动出击，好运眷顾勇者。","今天的你，值得拥有好事。","趁热打铁，宜冲。"],
+吉:["大吉大利！今日天选之子！","欧气爆棚，买彩票都嫌耽误时间。","诸事皆宜，放手去干！","今日宜：为所欲为（合法版）。"]
+};
+const YI=["摸鱼","表白","买彩票","点奶茶","早睡","健身","学习","追剧","加班","开会","写周报","面试","相亲","剁手","出门","复盘","存钱","告白","许愿","整理桌面"];
+const JI=["冲动消费","熬夜","抬杠","立flag","借钱","删库","裸辞","深夜emo","过度承诺","跟风","拖延","较真","贪杯","久坐","空腹喝咖啡"];
+
+function fortune(dateStr){
+const rng=mulberry32(hashStr('jrrp:'+dateStr));
+const score=Math.floor(rng()*101);
+let lv,cmt;
+if(score<=20){lv='凶';cmt=CMT.凶}
+else if(score<=40){lv='低迷';cmt=CMT.低}
+else if(score<=60){lv='平稳';cmt=CMT.中}
+else if(score<=80){lv='上吉';cmt=CMT.高}
+else{lv='大吉';cmt=CMT.吉}
+return {
+date:dateStr,score,lv,
+cmt:cmt[Math.floor(rng()*cmt.length)],
+yi:pickN(rng,YI,3),
+ji:pickN(rng,JI,3)
+};
+}
+
+const today=(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')})();
+$('date').textContent=today+' · '+['周日','周一','周二','周三','周四','周五','周六'][new Date().getDay()];
+function $(id){return document.getElementById(id)}
+
+let F=null;
+$('draw').onclick=()=>{
+const tube=$('tube');tube.classList.add('shake');
+$('draw').disabled=true;$('draw').textContent='摇签中…';
+setTimeout(()=>{
+tube.classList.remove('shake');
+F=fortune(today);render();
+$('ready').classList.add('hidden');
+const r=$('result');r.classList.remove('hidden');r.classList.add('reveal');
+},1400);
+};
+function render(){
+$('score').textContent=F.score;
+const lv=$('lv');lv.textContent=F.lv;
+lv.className='lv'+(F.score<=20?' bad':F.score>=81?' good':'');
+$('cmt').textContent='「'+F.cmt+'」';
+$('yi').innerHTML=F.yi.map(x=>`<li>${x}</li>`).join('');
+$('ji').innerHTML=F.ji.map(x=>`<li>${x}</li>`).join('');
+}
+$('copy').onclick=()=>{
+if(!F)return;
+const t=`${F.date}\n人品值 ${F.score}（${F.lv}）\n宜：${F.yi.join('、')}\n忌：${F.ji.join('、')}\n${F.cmt}`;
+navigator.clipboard.writeText(t).then(()=>{$('copy').textContent='已复制！';setTimeout(()=>$('copy').textContent='复制分享',1500)});
+};
+function tick(){
+const now=new Date(),mid=new Date(now);mid.setHours(24,0,0,0);
+let s=Math.floor((mid-now)/1000);
+const h=String(Math.floor(s/3600)).padStart(2,'0'),m=String(Math.floor(s%3600/60)).padStart(2,'0'),ss=String(s%60).padStart(2,'0');
+$('cd').textContent=`${h}:${m}:${ss}`;
+}
+tick();setInterval(tick,1000);
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>
